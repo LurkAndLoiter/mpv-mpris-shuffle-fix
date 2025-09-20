@@ -236,8 +236,25 @@ static const char art_files[][20] = {
 static const int art_files_count = sizeof(art_files) / sizeof(art_files[0]);
 
 static gchar* try_get_local_art(mpv_handle *mpv, char *path)
-{
-    gchar *dirname = g_path_get_dirname(path), *out = NULL;
+{   
+    gchar *out = NULL;
+    const gchar *extensions[] = {".jpg", ".png", ".gif", ".bmp", NULL};
+
+    gchar *base = g_strndup(path, strrchr(path, '.') - path);
+    gchar *img_path = NULL;
+    for (const char **ext = extensions; *ext; ++ext) {
+        img_path = g_strdup_printf("%s%s", base, *ext);
+        if (g_file_test(img_path, G_FILE_TEST_EXISTS)) {
+            out = path_to_uri(mpv, img_path);
+            g_free(img_path); img_path = NULL;
+            g_free(base); base = NULL;
+            return out;
+        }
+    }
+    g_free(img_path); img_path = NULL;
+    g_free(base); base = NULL;
+
+    gchar *dirname = g_path_get_dirname(path);
     gboolean found = FALSE;
 
     for (int i = 0; i < art_files_count; i++) {
