@@ -228,8 +228,20 @@ static const gchar *coverart[] = {
 static gchar* try_get_local_art(mpv_handle *mpv, char *path)
 {
     gchar *out = NULL;
-    gchar *dirname = g_path_get_dirname(path);
+    gchar *base = g_strndup(path, strrchr(path, '.') - path);
 
+    for (const gchar **ext = image_exts; *ext; ++ext) {
+        gchar *img = g_strdup_printf("%s.%s", base, *ext);
+        if (g_file_test(img, G_FILE_TEST_EXISTS)) {
+            out = path_to_uri(mpv, img);
+            g_free(img); g_free(base);
+            return out;
+        }
+        g_free(img);
+    }
+    g_free(base);
+
+    gchar *dirname = g_path_get_dirname(path);
     for (const gchar **ext = image_exts; *ext; ++ext) {
         for (const gchar **name = coverart; *name; ++name) {
             gchar *filename = g_strdup_printf("%s/%s.%s", dirname, *name, *ext);
